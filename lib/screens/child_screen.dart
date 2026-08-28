@@ -48,7 +48,7 @@ class _ChildScreenState extends State<ChildScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.security, size: 80, color: 'blue'),
+            const Icon(Icons.security, size: 80, color: Colors.blue),
             const SizedBox(height: 20),
             Text("Your IP: $_ipAddress", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const Padding(
