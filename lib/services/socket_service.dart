@@ -1,76 +1,79 @@
 import 'dart:io';
 import 'dart:convert';
-import 'dart:async';
 import '../models/command_model.dart';
-import 'device_admin_service.dart';
-import 'accessibility_service.dart';
 
 class SocketService {
-  ServerSocket? _serverSocket;
+  ServerSocket? _server;
   Socket? _clientSocket;
-  final int port = 8080;
-  
   Function(CommandModel)? onCommandReceived;
 
-  // CHILD MODE: Act as a server listening for parent commands
+  // ফিক্সড পোর্ট নম্বর (এটি চাইল্ড এবং প্যারেন্ট উভয় অ্যাপেই এক থাকতে হবে)
+  final int port = 4040;
+
+  // চাইল্ড ফোনে সার্ভার চালু করার জন্য
   Future<void> startServer() async {
-    _serverSocket = await ServerSocket.bind(InternetAddress.anyIPv4, port);
-    _serverSocket!.listen((Socket client) {
-      _clientSocket = client;
-      client.listen((List<int> data) {
-        final message = utf8.decode(data);
-        final command = CommandModel.fromJson(message);
-        _handleChildCommand(command);
-        if (onCommandReceived != null) onCommandReceived!(command);
+    try {
+      // InternetAddress.anyIPv4 ব্যবহার করা বাধ্যতামূলক যাতে হটস্পটের অন্য ডিভাইস থেকে কানেক্ট হতে পারে
+      _server = await ServerSocket.bind(InternetAddress.anyIPv4, port);
+      print('Socket Server running on port $port');
+
+      _server!.listen((Socket client) {
+        _clientSocket = client;
+        print('Parent connected successfully: ${client.remoteAddress.address}');
+
+        client.listen(
+          (data) {
+            try {
+              String jsonString = utf8.decode(data);
+              Map<String, dynamic> jsonMap = jsonDecode(jsonString);
+              CommandModel command = CommandModel.fromJson(jsonMap);
+              if (onCommandReceived != null) {
+                onCommandReceived!(command);
+              }
+            } catch (e) {
+              print('Error decoding command: $e');
+            }
+          },
+          onDone: () {
+            print('Parent disconnected');
+            _clientSocket = null;
+          },
+          onError: (error) {
+            print('Socket error: $error');
+            _clientSocket = null;
+          },
+        );
       });
-    });
+    } catch (e) {
+      print('Error starting server: $e');
+    }
   }
 
-  // PARENT MODE: Connect to child's IP
+  // প্যারেন্ট ফোন থেকে চাইল্ডে কানেক্ট করার জন্য
   Future<bool> connectToChild(String ipAddress) async {
     try {
+      // আইপির সাথে অবশ্যই ফিক্সড পোর্ট (যেমন: :4040) যুক্ত করতে হবে
       _clientSocket = await Socket.connect(ipAddress, port, timeout: const Duration(seconds: 5));
-      _clientSocket!.listen((List<int> data) {
-        final message = utf8.decode(data);
-        if (onCommandReceived != null) {
-          onCommandReceived!(CommandModel.fromJson(message));
-        }
-      });
+      print('Connected to child at $ipAddress:$port');
       return true;
     } catch (e) {
+      print('Connection failed: $e');
       return false;
     }
   }
 
+  // কমান্ড পাঠানোর জন্য
   void sendCommand(CommandModel command) {
     if (_clientSocket != null) {
-      _clientSocket!.write(command.toJson());
-    }
-  }
-
-  void _handleChildCommand(CommandModel command) async {
-    switch (command.type) {
-      case CommandType.lockDevice:
-        await DeviceAdminService.lockScreen();
-        break;
-      case CommandType.blockApp:
-        final package = command.payload?['package'];
-        if (package != null) await AccessibilityService.blockApp(package);
-        break;
-      case CommandType.unblockApp:
-        final package = command.payload?['package'];
-        if (package != null) await AccessibilityService.unblockApp(package);
-        break;
-      case CommandType.requestLocation:
-        // Handle via UI or geolocation service and send CommandType.sendLocation back
-        break;
-      default:
-        break;
+      String jsonString = jsonEncode(command.toJson());
+      _clientSocket!.write(jsonString);
+    } else {
+      print('Socket is not connected');
     }
   }
 
   void dispose() {
-    _serverSocket?.close();
-    _clientSocket?.close();
+    _server?.close();
+    _clientSocket?.destroy();
   }
 }
