@@ -1,0 +1,26 @@
+name: parental_control_app
+description: A local WiFi parental control application.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # For getting the local WiFi IP address
+  network_info_plus: ^5.0.3
+  # For location sharing
+  geolocator: ^11.0.0
+  # For JSON serialization
+  json_annotation: ^4.8.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  build_runner: ^2.4.8
+  json_serializable: ^6.7.1
+
+flutter:
+  uses-material-design: true
